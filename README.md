@@ -1,2 +1,3 @@
 # Smart-Coupons
+
 KubeeCommerce Smart Coupons component ...

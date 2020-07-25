@@ -1,8 +1,8 @@
 {
-  "name": "kubeeapp/kcms-push",
-  "description": "Deployment of themes and plugins directly from GitHub",
-  "keywords": ["kubee", "kcms", "kcms-push"],
-  "homepage": "https://github.com/YourGitHubUsername/example-plugin",
+  "name": "kubeecms/smart-coupons",
+  "description": "KubeeCMS Smart Coupons lets customers buy gift certificates, store credits or coupons easily. They can use purchased credits themselves or gift to someone else.",
+  "keywords": ["kubeecms", "kcms", "kcms-smart-coupons"],
+  "homepage": "https://github.com/kubeecms/smart-coupons/",
   "authors": [
     {
       "name": "Romeo Covaci",
