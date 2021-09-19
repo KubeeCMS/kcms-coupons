@@ -4,7 +4,7 @@
  *
  * @author      StoreApps
  * @since       3.3.0
- * @version     1.1.2
+ * @version     1.5.0
  *
  * @package     woocommerce-smart-coupons/includes/
  */
@@ -135,6 +135,8 @@ if ( ! class_exists( 'WC_SC_URL_Coupon' ) ) {
 					if ( true === $is_hold ) {
 						$this->hold_applied_coupon( $coupons_data );
 					}
+					// Set a session cookie to persist the coupon in case the cart is empty. This code will persist the coupon even if the param sc-page is not supplied.
+					WC()->session->set_customer_session_cookie( true ); // Thanks to: Devon Godfrey.
 				} else {
 					foreach ( $coupons_data as $coupon_data ) {
 						$coupon_code = $coupon_data['coupon-code'];
@@ -157,8 +159,15 @@ if ( ! class_exists( 'WC_SC_URL_Coupon' ) ) {
 						$page_id = woocommerce_get_page_id( $coupon_args['sc-page'] );
 					}
 					$redirect_url = get_permalink( $page_id );
-				} else {
-					$redirect_url = get_permalink( get_page_by_title( $coupon_args['sc-page'] ) );
+				} elseif ( is_string( $coupon_args['sc-page'] ) ) {
+					if ( is_numeric( $coupon_args['sc-page'] ) && ! is_float( $coupon_args['sc-page'] ) ) {
+						$page = $coupon_args['sc-page'];
+					} else {
+						$page = ( function_exists( 'wpcom_vip_get_page_by_path' ) ) ? wpcom_vip_get_page_by_path( $coupon_args['sc-page'], OBJECT, get_post_types() ) : get_page_by_path( $coupon_args['sc-page'], OBJECT, get_post_types() ); // phpcs:ignore
+					}
+					$redirect_url = get_permalink( $page );
+				} elseif ( is_numeric( $coupon_args['sc-page'] ) && ! is_float( $coupon_args['sc-page'] ) ) {
+					$redirect_url = get_permalink( $coupon_args['sc-page'] );
 				}
 
 				if ( empty( $redirect_url ) ) {
@@ -371,7 +380,9 @@ if ( ! class_exists( 'WC_SC_URL_Coupon' ) ) {
 			$sc_params  = array( 'coupon-code', 'sc-page' );
 			$url_params = array_diff_key( $url_args, array_flip( $sc_params ) );
 
-			return add_query_arg( $url_params, $url );
+			$redirect_url = apply_filters( 'wc_sc_redirect_url_after_smart_coupons_process', add_query_arg( $url_params, $url ), array( 'source' => $this ) );
+
+			return $redirect_url;
 		}
 
 		/**

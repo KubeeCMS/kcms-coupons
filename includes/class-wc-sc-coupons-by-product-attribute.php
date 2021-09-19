@@ -5,7 +5,7 @@
  * @author      StoreApps
  * @category    Admin
  * @package     wocommerce-smart-coupons/includes
- * @version     1.0.3
+ * @version     1.3.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -26,7 +26,6 @@ if ( ! class_exists( 'WC_SC_Coupons_By_Product_Attribute' ) ) {
 		 */
 		private static $instance = null;
 
-
 		/**
 		 * Constructor
 		 */
@@ -39,6 +38,8 @@ if ( ! class_exists( 'WC_SC_Coupons_By_Product_Attribute' ) ) {
 			add_filter( 'wc_smart_coupons_export_headers', array( $this, 'export_headers' ) );
 			add_filter( 'smart_coupons_parser_postmeta_defaults', array( $this, 'postmeta_defaults' ) );
 			add_filter( 'is_protected_meta', array( $this, 'make_action_meta_protected' ), 10, 3 );
+			add_filter( 'sc_generate_coupon_meta', array( $this, 'generate_coupon_attribute_meta' ), 10, 2 );
+			add_action( 'wc_sc_new_coupon_generated', array( $this, 'copy_coupon_attributes_meta' ) );
 		}
 
 		/**
@@ -134,14 +135,22 @@ if ( ! class_exists( 'WC_SC_Coupons_By_Product_Attribute' ) ) {
 					}
 				}
 				if ( ! empty( $attribute_taxonomies_name ) ) {
+					$args = array(
+						'orderby'    => 'name',
+						'hide_empty' => 0,
+					);
+					$args = apply_filters( 'woocommerce_product_attribute_terms', $args );
 					if ( version_compare( $wp_version, '4.5.0', '>=' ) ) {
 						$attribute_taxonomies_terms = get_terms(
-							array(
-								'taxonomy' => $attribute_taxonomies_name,
+							array_merge(
+								array(
+									'taxonomy' => $attribute_taxonomies_name,
+								),
+								$args
 							)
 						);
 					} else {
-						$attribute_taxonomies_terms = get_terms( $attribute_taxonomies_name );
+						$attribute_taxonomies_terms = get_terms( $attribute_taxonomies_name, $args );
 					}
 					if ( ! empty( $attribute_taxonomies_terms ) && is_array( $attribute_taxonomies_terms ) ) {
 						foreach ( $attribute_taxonomies_terms as $attribute_taxonomy_term ) {
@@ -253,6 +262,14 @@ if ( ! class_exists( 'WC_SC_Coupons_By_Product_Attribute' ) ) {
 		 * @return bool           $valid
 		 */
 		public function validate( $valid = false, $product = null, $coupon = null, $values = null ) {
+
+			$backtrace = wp_list_pluck( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), 'function' ); // phpcs:ignore
+
+			// If coupon is already invalid, no need for further checks.
+			// Ignore this check if the discount type is a non-product-type discount.
+			if ( true !== $valid && ! in_array( 'handle_non_product_type_coupons', $backtrace, true ) ) {
+				return $valid;
+			}
 
 			if ( empty( $product ) || empty( $coupon ) ) {
 				return $valid;
@@ -368,6 +385,11 @@ if ( ! class_exists( 'WC_SC_Coupons_By_Product_Attribute' ) ) {
 		 */
 		public function handle_non_product_type_coupons( $valid = true, $coupon = null, $discounts = null ) {
 
+			// If coupon is already invalid, no need for further checks.
+			if ( true !== $valid ) {
+				return $valid;
+			}
+
 			if ( ! is_a( $coupon, 'WC_Coupon' ) ) {
 				return $valid;
 			}
@@ -411,13 +433,13 @@ if ( ! class_exists( 'WC_SC_Coupons_By_Product_Attribute' ) ) {
 						$invalid_products = array();
 						foreach ( $items_to_validate as $item ) {
 							$cart_item    = clone $item; // Clone the item so changes to wc_discounts item do not affect the originals.
-							$item_proudct = isset( $cart_item->product ) ? $cart_item->product : null;
+							$item_product = isset( $cart_item->product ) ? $cart_item->product : null;
 							$item_object  = isset( $cart_item->object ) ? $cart_item->object : null;
-							if ( ! is_null( $item_proudct ) && ! is_null( $item_object ) ) {
-								if ( $coupon->is_valid_for_product( $item_proudct, $item_object ) ) {
-									$valid_products[] = $item_proudct;
+							if ( ! is_null( $item_product ) && ! is_null( $item_object ) ) {
+								if ( $coupon->is_valid_for_product( $item_product, $item_object ) ) {
+									$valid_products[] = $item_product;
 								} else {
-									$invalid_products[] = $item_proudct;
+									$invalid_products[] = $item_product;
 								}
 							}
 						}
@@ -505,6 +527,51 @@ if ( ! class_exists( 'WC_SC_Coupons_By_Product_Attribute' ) ) {
 			}
 
 			return $protected;
+		}
+
+		/**
+		 * Add product's attribute in coupon meta
+		 *
+		 * @param  array $data The row data.
+		 * @param  array $post The POST values.
+		 * @return array Modified data
+		 */
+		public function generate_coupon_attribute_meta( $data = array(), $post = array() ) {
+
+			$product_attribute_ids = ( isset( $post['wc_sc_product_attribute_ids'] ) ) ? wc_clean( wp_unslash( $post['wc_sc_product_attribute_ids'] ) ) : array(); // phpcs:ignore
+			$data['wc_sc_product_attribute_ids'] = implode( '|', $product_attribute_ids ); // Store attribute ids as delimited data instead of serialized data.
+
+			$exclude_product_attribute_ids = ( isset( $post['wc_sc_exclude_product_attribute_ids'] ) ) ? wc_clean( wp_unslash( $post['wc_sc_exclude_product_attribute_ids'] ) ) : array(); // phpcs:ignore
+			$data['wc_sc_exclude_product_attribute_ids'] = implode( '|', $exclude_product_attribute_ids ); // Store attribute ids as delimited data instead of serialized data.
+
+			return $data;
+		}
+
+		/**
+		 * Function to copy product's attribute meta in newly generated coupon
+		 *
+		 * @param  array $args The arguments.
+		 */
+		public function copy_coupon_attributes_meta( $args = array() ) {
+
+			$new_coupon_id = ( ! empty( $args['new_coupon_id'] ) ) ? absint( $args['new_coupon_id'] ) : 0;
+			$coupon        = ( ! empty( $args['ref_coupon'] ) ) ? $args['ref_coupon'] : false;
+
+			if ( empty( $new_coupon_id ) || empty( $coupon ) ) {
+				return;
+			}
+
+			if ( $this->is_wc_gte_30() ) {
+				$product_attribute_ids         = $coupon->get_meta( 'wc_sc_product_attribute_ids' );
+				$exclude_product_attribute_ids = $coupon->get_meta( 'wc_sc_exclude_product_attribute_ids' );
+			} else {
+				$old_coupon_id                 = ( ! empty( $coupon->id ) ) ? $coupon->id : 0;
+				$product_attribute_ids         = get_post_meta( $old_coupon_id, 'wc_sc_product_attribute_ids', true );
+				$exclude_product_attribute_ids = get_post_meta( $old_coupon_id, 'wc_sc_exclude_product_attribute_ids', true );
+			}
+			update_post_meta( $new_coupon_id, 'wc_sc_product_attribute_ids', $product_attribute_ids );
+			update_post_meta( $new_coupon_id, 'wc_sc_exclude_product_attribute_ids', $exclude_product_attribute_ids );
+
 		}
 	}
 }

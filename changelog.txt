@@ -1,7 +1,257 @@
 *** WooCommerce Smart Coupons Changelog ***
 
+2021.09.06 - version 4.27.0
+* New: Settings in acknowledgement email ('Subject' and 'Heading') to handle texts related to scheduled email
+* New: Option 'wc_sc_auto_apply_coupon_removable' and hook 'wc_sc_is_auto_apply_coupon_removable' to allow removal of auto-apply coupons
+* Fix: Under 'Import Coupons' 'Email coupon to recipients?' not appearing if there is no email added in the first row of the CSV file
+* Fix: Incorrect calculation in store credit when used in manually created orders
+* Fix: Coupon type in the acknowledgement email is always of the discount type 'smart_coupon' irrespective of the coupon sent
+* Developer: New hook 'wc_sc_redirect_url_after_smart_coupons_process' to allow 3rd party plugin to modify the redirect URL after the plugin has processed the URL coupons
+* Update: Tweaking in auto-apply feature
+* Update: Changes in texts in email templates for acknowledgement email
+* Update: Allow removal of auto apply coupons
+* Update: Spellcheck for 'Coupons', 'arguments'
+* Update: POT file
+
+2021.08.23 - version 4.26.0
+* New: Tested up to WooCommerce 5.6.0 & WordPress 5.8.0
+* Update: Improvements in auto-apply feature
+* Update: Set a session cookie to persist the coupon in case the cart is empty [Thanks to: Devon Godfrey]
+* Update: Spellcheck for 'generation'
+* Update: Changes in HTML for displaying coupon shareable link on the admin side
+* Update: POT file
+
+2021.07.06 - version 4.25.1
+* Fix: Notice: Undefined variable: user_role during guest checkout
+* Fix: Notice: Undefined variable: email during guest checkout
+* Update: POT file
+
+2021.07.05 - version 4.25.0
+* Fix: Cancelled PayPal payment returns cart total to 0 on gift certificate purchases
+* Update: Auto-apply functionality to consider usage restrictions as well
+* Update: POT file
+
+2021.06.25 - version 4.24.0
+* Update: Coupon shareable link not working with page slug or page id
+* Update: Ignore usage restriction related to user roles when the coupon is getting applied from admin side
+* Update: POT file
+
+2021.06.16 - version 4.23.0
+* New: Tested up to WooCommerce 5.4.1
+* Fix: 1-click coupon apply not working with CheckoutWC
+* Fix: WordPress database error Table doesn't exist when referring to users table in a multisite environment [Thanks to: Bradley Cross]
+* Update: During manual creation of order from admin side, allow application of coupon that is restricted for user roles
+* Update: POT file
+
+2021.06.03 - version 4.22.0
+* Fix: CRITICAL Uncaught Exception: This coupon is valid for the first order only
+* Fix: Incorrect calculation when multiple store credit is applied 
+* Fix: 'Coupon shareable link' not working, added param 'sc-page' in the shareable link
+* Update: Hook 'wc_sc_is_filter_content_coupon_message' to decide whether to filter the content of the coupon message or not, before displaying on the website
+* Update: Default arguments for method WC_SC_Coupon_Message::wc_add_coupons_message_in_email [PHP8]
+* Update: POT file
+
+2021.05.19 - version 4.21.0
+* New: Tested up to WooCommerce 5.3.0 & WordPress 5.7.2
+* Fix: PHP Warning: The magic method WC_Smart_Coupons::__wakeup() must have public visibility [PHP8]
+* Fix: Named parameters in call_user_func_array [PHP8] [Thanks to: Noah]
+* Update: Documentation link for coupon search limitations for the setting 'Enable store notice for the coupon'
+* Update: POT file
+
+2021.05.10 - version 4.20.1
+* Fix: 'Show on cart, checkout and my account?' functionality not working since last update
+* Update: POT file
+
+2021.05.05 - version 4.20.0
+* Fix: Performance issues when trying to display coupons on cart/checkout pages in some cases
+* Fix: Amount field doesn't appear sometimes while purchasing credit of any amount [Thanks to: Matt]
+* Update: POT file
+
+2021.04.26 - version 4.19.0
+* New: Tested up to WooCommerce 5.2.2 & WordPress 5.7.1
+* Developer: New hook 'wc_sc_json_search_storewide_coupons' to allow 3rd party plugin to modify search result of storewide coupon
+* Update: Set autoload of all Smart Coupons related options as 'no'
+* Update: French translation
+* Update: POT file
+
+2021.03.26 - version 4.18.0
+* Developer: New hook 'wc_sc_credit_remaining' to allow 3rd party plugin to modify remaining credit before saving it [Thanks to: Diego Zanella | Aelia.co]
+* Fix: Remove 'sticky' admin notice about import completion [Thanks to: Les Xue | WordPress VIP]
+* Tweak: Code cleanup
+* Update: Move displaying coupon message on 'updated_checkout' event instead of 'update_checkout' [Thanks to: Diego Zanella | Aelia.co]
+* Update: Change location of files created by the plugin to a secure location
+* Update: Specific error message for 'new user' coupons
+* Update: POT file
+
+2021.03.08 - version 4.17.5
+* Fix: Expiry date is not being displayed in the coupon that is sent in the email
+* Fix: Prevent the modification of the minimum & maximum amount during the purchase of credit of any amount from the browser
+* Update: Additional arguments for filter 'wc_sc_is_auto_generate'
+* Update: POT file
+
+2021.02.24 - version 4.17.0
+* New: Tested up to WooCommerce 5.0.0 & WordPress 5.6.2
+* Fix: Expiry time is not being considered during coupon validation
+* Fix: Generated store credit amount is not considering currency [Multi Currency for WooCommerce By VillaTheme]
+* Fix: Sometimes the latest imported coupons are not getting activated if the code already exists
+* Fix: Incorrect validation of the fields 'Product attributes' & 'Exclude attributes' under Coupon data > Usage restriction tab
+* Fix: Validation based on product taxonomies not working if the taxonomy is related to the parent product
+* Update: Use the date format of the website to display expiry date in the coupons
+* Update: Added hook to control the number of attributes for field 'Product attributes' & 'Exclude attributes' under Coupon data > Usage restriction tab
+* Update: Correction in a few PHPDocBlocks
+* Update: POT file
+
+2021.02.05 - version 4.16.5
+* Fix: Product attributes restrictions are not getting copied in auto-generated coupons
+* Fix: Coupons are not getting sent on renewals only in case of variable subscription
+* Fix: Auto-apply coupons not working for 'Recurring Product % Discount' coupon if the sign up fee is 0 (zero)
+* Update: POT file
+
+2021.02.01 - version 4.16.0
+* New: Tested up to WooCommerce 4.9.2
+* Update: Improvements related to sanitizing & escaping data
+* Update: POT file
+
+2021.01.15 - version 4.15.0
+* New: Tested up to WooCommerce 4.9.0
+* Fix: Error 'Invalid payment method' when fully paid via store credit [WPML]
+* Fix: When the 'Max discount' is set, sometimes the discount calculated is not accurate
+* Update: POT file
+
+2021.01.05 - version 4.14.0
+* Fix: 'Exclude attributes' restriction overriding 'Exclude categories' restriction
+* Fix: 'Max discount' is not getting calculated properly in case of WooCommerce setting for a decimal value other than 2
+* Fix: Setting 'Disable email restriction' not working in case of coupons scheduled to be sent at a later date
+* Fix: Purchased coupons that are scheduled to be sent later via email, are not getting emailed in some cases
+* Fix: Removed unnecessary 'console.log'
+* Fix: HTML & CSS of add & remove button of 'Taxonomy' restrictions for responsiveness
+* Update: Display details of scheduled coupons in order under 'Generated coupons' meta box
+* Update: POT file
+
+2020.12.10 - version 4.13.0
+* New: Tested upto WooCommerce 4.7.1, 4.8.0 & WordPress 5.6.0
+* New: Coupon usage restrictions for various product taxonomies
+* Update: Support for modifying the input field provided for those products which allows purchasing store credit of any amount
+* Update: Better handling of validation of the input field for those products which allows purchasing store credit of any amount
+* Update: Pass the expiry date through a common formatting function on the Smart Coupons admin setting page
+* Update: CSS for coupon location field
+* Update: POT file
+
+2020.11.09 - version 4.12.2
+* Fix: Uncaught ReferenceError: sc_coupon_message_ajax is not defined
+* Fix: Uncaught ReferenceError: sc_available_coupons_ajax is not defined
+* Update: POT file
+
+2020.11.07 - version 4.12.1
+* New: Tested upto WooCommerce 4.6.2
+* Fix: Email not sending for purchased coupons which are scheduled to be sent 'LATER'
+* Fix: Not checking order statuses while validating new user coupon in the case of guest users
+* Fix: Sometimes showing fatal error if a coupon which is about to be displayed is deleted
+* Fix: Uncaught Error: Using $this when not in object context from 2 templates: email.php & combined-email.php
+* Fix: JavaScript error: Trying to declare the variable a second time
+* Update: Hook 'wc_sc_max_coupon_to_show_on_myaccount' & setting 'wc_sc_setting_max_coupon_to_show_on_myaccount'
+* Update: Limit on the number of coupons to be loaded in the coupons tab on the my account page
+* Update: Improvements in coupon tabs on the my account page such that segments will get loaded only if it has some data
+* Update: Use coupon setting 'Exclude sale items' during generation of coupon description
+* Update: Set the position of Print button to right on my account page
+* Update: Minor change in logic of displaying coupon to ensure correct number of coupons to display as per setting
+* Update: POT file
+
+2020.11.02 - version 4.12.0
+* New: Tested upto WooCommerce 4.6.1 & WordPress 5.5.3
+* New: Usage restriction to exclude user roles
+* New: Feature to select quantity of the products which will be added to cart on applying a coupon (under Coupon data > Actions tab)
+* Fix: Incorrectly showing description of one coupon as description of other coupons
+* Fix: Remove unnecessary CSS from styles of coupons which are going in the email
+* Update: sample.csv file
+* Update: POT file
+
+2020.10.26 - version 4.11.0
+* New: Allow linking of coupon to variations as well
+* Developer: Hook 'wc_sc_is_filter_content_coupon_message'
+* Update: Highlight Smart Coupons' field under product
+* Update: Coupon design templates for handling empty coupon amount
+* Update: API namespace
+* Update: POT file
+
+2020.10.19 - version 4.10.0
+* New: Tested upto WooCommerce 4.6.0
+* New: API support for generating coupons
+* Fix: Incorrectly overriding 'custom-design' for coupon on saving the settings
+* Fix: Incorrectly adding 'is_email' attribute when adding shortcode using WP editor button
+* Fix: Reduce multiple AJAX request on the cart & the checkout page to one (happens only in some cases) (Thanks to: BuildWooFunnels)
+* Fix: Links added in the message, which will be sent along with the coupon, those links are broken in the received email
+* Update: Display store notice for coupon based on the coupon's status
+* Update: Provide support for selecting order statuses to consider during the validation of new user coupons
+* Developer: Hook 'wc_sc_should_coupon_auto_generate'
+* Update: POT file
+
+2020.10.09 - version 4.9.5
+* New: Set a coupon to display as storewide offer coupon. It will be displayed everywhere on the website.
+* Fix: Initialization of Action Scheduler package
+* Update: Action Scheduler package to version 3.1.6
+* Update: Delayed execution of function 'handle_coupon_process_on_3rd_party_order_statuses' to support necessary changes to take place
+* Update: POT file
+
+2020.09.28 - version 4.9.1
+* Fix: Selected coupon design for email is not getting sent in the order received email
+* Fix: Width of checkbox in 'Bulk generate form'
+* Fix: Incorrectly selecting the colors setting for a coupon if the background & foreground color is already set
+* Fix: Coupons in the email are not center-aligned
+* Fix: Sometimes colors selected for coupons are not applying to coupons in the email
+* Fix: Empty description in some coupons on the frontend
+* Update: POT file
+
+2020.09.23 - version 4.9.0
+* New: Tested upto WooCommerce 4.5.2 & WordPress 5.5.1
+* New: New improved coupon designs with some predefined color schemes
+* New: Setting 'Include tax in the amount of the generated store credit'
+* Fix: Unnecessarily showing 'Coupon does not exist' notice when trying to auto-apply a coupon which is in draft status
+* Fix: Orders are not including generated coupon details when the setting 'Email auto generated coupons to recipients' is disabled
+* Fix: Smart Coupons' shortcode button not visible in classic editor
+* Update: Prevent querying the database if the store owner sets 0 coupons to show
+* Update: Remove usage of deprecated jQuery event 'ready' [WordPress 5.5]
+* Update: Additional information on 'Import CSV' page
+* Update: Expiry date format in the coupon displayed on the website
+* Update: Notice for minimum WooCommerce requirement
+* Update: Add additional params on using Smart Coupons' shortcode button
+* Tweak: Performance improvement in auto-apply coupon functionlity
+* Developer: Overridable template support for coupon designs
+* Developer: Additional arguments for hook 'wc_sc_before_shortcode_smart_coupons_html_start'
+* Developer: Additional arguments for hook 'wc_sc_max_coupon_to_show'
+* Developer: Additional arguments for hook 'wc_sc_max_auto_apply_coupons_limit'
+* Developer: Hook 'wc_sc_is_send_coupon_email'
+* Update: POT file
+
+2020.09.08 - version 4.8.1
+* Fix: Discount not applied on taxes when Apply before tax is disabled [WooCommerce AvaTax]
+* Update: Remove usage of deprecated jQuery event 'ready' & function 'load' [WordPress 5.5]
+* Update: POT file
+
+2020.08.24 - version 4.8.0
+* New: Group coupons by category
+* New: Tested upto WooCommerce 4.4.1 & WordPress 5.5
+* Fix: 'Click to Copy' updating coupon
+* Fix: Max discount not working
+* Update: Link color in footer
+* Update: Code improvements for admin CSS
+* Developer: Hook 'wc_sc_before_shortcode_smart_coupons_html_start'
+* Developer: Hook 'wc_sc_coupon_code_allowed_characters'
+* Developer: Hook 'wc_sc_is_coupon_restriction_available'
+* Update: POT file
+
+2020.08.05 - version 4.7.8
+* New: Tested upto WooCommerce 4.3.1
+* New: Template for purchasing credit of any amount (on single product page)
+* New: Template for acknowledgement email that is sent to the purchaser of the coupon
+* Fix: Bulk generate or import process not working in multisite sometimes
+* Fix: Store credit is unable to apply discount when the price on the store is exclusive of tax [WooCommerce AvaTax]
+* Update: An option to ignore notice 'Coupon was used in another transaction, and coupon usage limit is reached'
+* Update: POT file
+
 2020.07.10 - version 4.7.7
 * New: Tested upto WooCommerce 4.3.0
+* Fix: Database errors related to duplicate option entry 'sc_display_custom_credit_'
 * Update: Feature to stop a running bulk generate/import coupon process
 * Update: Feature to auto-stop a running process when the bulk generate/import process gets stuck
 * Update: 2 additional attributes 'is_email' & 'is_clickable' for shortcode 'smart_coupons'

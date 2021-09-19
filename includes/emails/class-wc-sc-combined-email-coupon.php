@@ -4,7 +4,7 @@
  *
  * @author      StoreApps
  * @since       4.4.1
- * @version     1.0.4
+ * @version     1.2.1
  *
  * @package     woocommerce-smart-coupons/includes/emails/
  */
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WC_SC_Combined_Email_Coupon' ) ) {
 	/**
-	 * The Smart Copuons Combined Email class
+	 * The Smart Coupons Combined Email class
 	 *
 	 * @extends \WC_SC_Email
 	 */
@@ -148,10 +148,22 @@ if ( ! class_exists( 'WC_SC_Combined_Email_Coupon' ) ) {
 			$email            = isset( $this->email_args['email'] ) ? $this->email_args['email'] : '';
 			$receiver_details = isset( $this->email_args['receiver_details'] ) ? $this->email_args['receiver_details'] : '';
 
-			$design           = get_option( 'wc_sc_setting_coupon_design', 'round-dashed' );
+			$design           = get_option( 'wc_sc_setting_coupon_design', 'basic' );
 			$background_color = get_option( 'wc_sc_setting_coupon_background_color', '#39cccc' );
 			$foreground_color = get_option( 'wc_sc_setting_coupon_foreground_color', '#30050b' );
-			$coupon_styles    = $woocommerce_smart_coupon->get_coupon_styles( $design, array( 'is_email' => 'yes' ) );
+			$third_color      = get_option( 'wc_sc_setting_coupon_third_color', '#39cccc' );
+
+			$show_coupon_description = get_option( 'smart_coupons_show_coupon_description', 'no' );
+
+			$valid_designs = $woocommerce_smart_coupon->get_valid_coupon_designs();
+
+			if ( ! in_array( $design, $valid_designs, true ) ) {
+				$design = 'basic';
+			}
+
+			$design = ( 'custom-design' !== $design ) ? 'email-coupon' : $design;
+
+			$coupon_styles = $woocommerce_smart_coupon->get_coupon_styles( $design, array( 'is_email' => 'yes' ) );
 
 			$default_path  = $this->template_base;
 			$template_path = $woocommerce_smart_coupon->get_template_base_dir( $this->template_html );
@@ -161,16 +173,19 @@ if ( ! class_exists( 'WC_SC_Combined_Email_Coupon' ) ) {
 			wc_get_template(
 				$this->template_html,
 				array(
-					'email'            => $email,
-					'email_heading'    => $email_heading,
-					'order'            => $order,
-					'url'              => $url,
-					'from'             => $from,
-					'background_color' => $background_color,
-					'foreground_color' => $foreground_color,
-					'coupon_styles'    => $coupon_styles,
-					'sender'           => $sender,
-					'receiver_details' => $receiver_details,
+					'email'                   => $email,
+					'email_heading'           => $email_heading,
+					'order'                   => $order,
+					'url'                     => $url,
+					'from'                    => $from,
+					'background_color'        => $background_color,
+					'foreground_color'        => $foreground_color,
+					'third_color'             => $third_color,
+					'coupon_styles'           => $coupon_styles,
+					'sender'                  => $sender,
+					'receiver_details'        => $receiver_details,
+					'show_coupon_description' => $show_coupon_description,
+					'design'                  => $design,
 				),
 				$template_path,
 				$default_path
@@ -242,7 +257,7 @@ if ( ! class_exists( 'WC_SC_Combined_Email_Coupon' ) ) {
 			$is_email_enabled = $this->get_field_value( 'enabled', $this->form_fields['enabled'] );
 
 			if ( ! empty( $is_email_enabled ) ) {
-				update_site_option( 'smart_coupons_combine_emails', $is_email_enabled );
+				update_option( 'smart_coupons_combine_emails', $is_email_enabled, 'no' );
 			}
 		}
 

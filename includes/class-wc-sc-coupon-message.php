@@ -5,7 +5,7 @@
  * @author      Ratnakar
  * @category    Admin
  * @package     wocommerce-smart-coupons/includes
- * @version     1.3.1
+ * @version     1.8.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -214,7 +214,21 @@ if ( ! class_exists( 'WC_SC_Coupon_Message' ) ) {
 				?>
 					<div id="wc_coupon_message_<?php echo esc_attr( $coupon_id ); ?>" class="wc_coupon_message_container">
 						<div class="wc_coupon_message_body">
-							<?php echo apply_filters( 'the_content', $wc_coupon_message ); // phpcs:ignore ?>
+							<?php
+								$is_filter_content = apply_filters(
+									'wc_sc_is_filter_content_coupon_message',
+									true,
+									array(
+										'source'        => $this,
+										'called_by'     => current_filter(),
+										'coupon_object' => $coupon,
+									)
+								);
+							if ( true === $is_filter_content ) {
+								$wc_coupon_message = apply_filters( 'the_content', $wc_coupon_message );
+							}
+							?>
+							<?php echo wp_kses_post( $wc_coupon_message ); // phpcs:ignore ?>
 						</div>
 					</div>
 				<?php
@@ -243,22 +257,28 @@ if ( ! class_exists( 'WC_SC_Coupon_Message' ) ) {
 
 			if ( is_cart() || is_checkout() ) {
 				$js = "
-						jQuery('body').on('applied_coupon removed_coupon update_checkout', function(){
-							jQuery.ajax({
-								url: '" . admin_url( 'admin-ajax.php' ) . "',
-								type: 'POST',
-								dataType: 'html',
-								data: {
-									action: 'get_wc_coupon_message',
-									security: '" . wp_create_nonce( 'wc_coupon_message' ) . "'
-								},
-								success: function( response ) {
-									jQuery('.wc_coupon_message_wrap').html('');
-									if ( response != undefined && response != '' ) {
-										jQuery('.wc_coupon_message_wrap').html( response );										
+						if (typeof sc_coupon_message_ajax === 'undefined') {
+							var sc_coupon_message_ajax = null;
+						}
+						jQuery('body').on('applied_coupon removed_coupon updated_checkout', function(){
+							clearTimeout( sc_coupon_message_ajax );
+							sc_coupon_message_ajax = setTimeout(function(){
+								jQuery.ajax({
+									url: '" . admin_url( 'admin-ajax.php' ) . "',
+									type: 'POST',
+									dataType: 'html',
+									data: {
+										action: 'get_wc_coupon_message',
+										security: '" . wp_create_nonce( 'wc_coupon_message' ) . "'
+									},
+									success: function( response ) {
+										jQuery('.wc_coupon_message_wrap').html('');
+										if ( response != undefined && response != '' ) {
+											jQuery('.wc_coupon_message_wrap').html( response );										
+										}
 									}
-								}
-							});
+								});
+							}, 200);
 						});
 
 						";
@@ -290,7 +310,7 @@ if ( ! class_exists( 'WC_SC_Coupon_Message' ) ) {
 		 * @param  boolean  $bool Not used in this function.
 		 * @param  boolean  $plain_text Not used in this function.
 		 */
-		public function wc_add_coupons_message_in_email( $order, $bool, $plain_text ) {
+		public function wc_add_coupons_message_in_email( $order = null, $bool = false, $plain_text = false ) {
 			$used_coupons = $this->get_coupon_codes( $order );
 			if ( count( $used_coupons ) <= 0 ) {
 				return;
@@ -307,7 +327,21 @@ if ( ! class_exists( 'WC_SC_Coupon_Message' ) ) {
 				$coupon_message   = get_post_meta( $coupon_id, 'wc_coupon_message', true );
 				$include_in_email = get_post_meta( $coupon_id, 'wc_email_message', true );
 				if ( ! empty( $coupon_message ) && 'yes' === $include_in_email ) {
-					$coupon_messages          .= apply_filters( 'the_content', $coupon_message );
+					$is_filter_content = apply_filters(
+						'wc_sc_is_filter_content_coupon_message',
+						true,
+						array(
+							'source'        => $this,
+							'called_by'     => current_filter(),
+							'coupon_object' => $coupon,
+							'order_object'  => $order,
+						)
+					);
+					if ( true === $is_filter_content ) {
+						$coupon_messages .= apply_filters( 'the_content', $coupon_message );
+					} else {
+						$coupon_messages .= $coupon_message;
+					}
 					$show_coupon_message_title = true;
 				}
 			}
@@ -316,7 +350,7 @@ if ( ! class_exists( 'WC_SC_Coupon_Message' ) ) {
 				<h2><?php echo esc_html__( 'Coupon Message', 'woocommerce-smart-coupons' ); ?></h2>
 				<?php
 				echo '<div class="wc_coupon_message_wrap" style="padding: 10px 0 10px;">';
-				echo $coupon_messages; // phpcs:ignore
+				echo wp_kses_post( $coupon_messages ); // phpcs:ignore
 				echo '</div>';
 			}
 		}

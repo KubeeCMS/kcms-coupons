@@ -4,7 +4,7 @@
  *
  * @author      StoreApps
  * @since       3.3.0
- * @version     1.1.5
+ * @version     1.7.0
  *
  * @package     woocommerce-smart-coupons/includes/
  */
@@ -122,21 +122,33 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 				$product_id = ( ! empty( $product->id ) ) ? $product->id : 0;
 			}
 
-			$coupons = get_post_meta( $product_id, '_coupon_title', true );
+			$coupons = $this->get_coupon_titles( array( 'product_object' => $product ) );
 
 			if ( ! function_exists( 'is_plugin_active' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			}
 
-			// MADE CHANGES IN THE CONDITION TO SHOW INPUT FIELDFOR PRICE ONLY FOR COUPON AS A PRODUCT.
-			if ( ! empty( $coupons ) && $this->is_coupon_amount_pick_from_product_price( $coupons ) && ( ! ( '' !== $product->get_price() || ( is_plugin_active( 'woocommerce-name-your-price/woocommerce-name-your-price.php' ) && ( get_post_meta( $product_id, '_nyp', true ) === 'yes' ) ) ) ) ) {
+			$product_price = $product->get_price();
+
+			// MADE CHANGES IN THE CONDITION TO SHOW INPUT FIELD FOR PRICE ONLY FOR COUPON AS A PRODUCT.
+			if ( ! empty( $coupons ) && $this->is_coupon_amount_pick_from_product_price( $coupons ) && ( ! ( ! empty( $product_price ) || ( is_plugin_active( 'woocommerce-name-your-price/woocommerce-name-your-price.php' ) && ( get_post_meta( $product_id, '_nyp', true ) === 'yes' ) ) ) ) ) {
 
 				$js = "
-							var validateCreditCalled = function(){
-								var enteredCreditAmount = jQuery('input#credit_called').val();
-								enteredCreditAmount = parseFloat( enteredCreditAmount );
-								if ( isNaN(enteredCreditAmount) || enteredCreditAmount < 0.01 ) {
-									jQuery('#error_message').text('" . __( 'Invalid amount', 'woocommerce-smart-coupons' ) . "');
+							const minCreditAmount      = parseFloat( jQuery('input#credit_called').attr('min') );
+							const maxCreditAmount      = parseFloat( jQuery('input#credit_called').attr('max') );
+							var   validateCreditCalled = function(){
+								var enteredCreditAmount  = parseFloat( jQuery('input#credit_called').val() );
+								if ( isNaN(enteredCreditAmount) || enteredCreditAmount < minCreditAmount || ( maxCreditAmount > 0 && enteredCreditAmount > maxCreditAmount ) ) {
+									var creditErrorMsg = '" . __( 'Invalid amount.', 'woocommerce-smart-coupons' ) . "';
+									if ( isNaN(enteredCreditAmount) ) {
+										creditErrorMsg += ' " . __( 'Enter a numeric value.', 'woocommerce-smart-coupons' ) . "';
+									}
+									if ( enteredCreditAmount < minCreditAmount ) {
+										creditErrorMsg += ' " . __( 'The value should not be less than', 'woocommerce-smart-coupons' ) . " ' + minCreditAmount;
+									} else if ( enteredCreditAmount > maxCreditAmount ) {
+										creditErrorMsg += ' " . __( 'The value should not be greater than', 'woocommerce-smart-coupons' ) . " ' + maxCreditAmount;
+									}
+									jQuery('#error_message').text(creditErrorMsg);
 									jQuery('input#credit_called').css('border-color', 'red');
 									return false;
 								} else {
@@ -151,12 +163,11 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 								validateCreditCalled();
 								jQuery('input#hidden_credit').remove();
 								if ( jQuery('input[name=quantity]').length ) {
-									jQuery('input[name=quantity]').append('<input type=\"hidden\" id=\"hidden_credit\" name=\"credit_called[" . $product_id . "]\" value=\"'+jQuery('input#credit_called').val()+'\" />');
+									jQuery('input[name=quantity]').append('<input type=\"hidden\" id=\"hidden_credit\" name=\"credit_called[" . absint( $product_id ) . "]\" value=\"'+jQuery('input#credit_called').val()+'\" />');
 								} else {
-									jQuery('input[name=\"add-to-cart\"]').after('<input type=\"hidden\" id=\"hidden_credit\" name=\"credit_called[" . $product_id . "]\" value=\"'+jQuery('input#credit_called').val()+'\" />');
+									jQuery('input[name=\"add-to-cart\"]').after('<input type=\"hidden\" id=\"hidden_credit\" name=\"credit_called[" . absint( $product_id ) . "]\" value=\"'+jQuery('input#credit_called').val()+'\" />');
 								}
 							});
-
 
 							jQuery('button.single_add_to_cart_button').on('click', function(e) {
 								if ( validateCreditCalled() == false ) {
@@ -171,14 +182,12 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 							});
 
 							// To handle, if the call for credit form is included twice.
-							jQuery(document).ready(function(){
-								jQuery.each( jQuery('body').find('div#call_for_credit'), function(){
-									let current_element = jQuery(this);
-									let is_visible = current_element.is(':visible');
-									if ( false === is_visible ) {
-										current_element.remove();
-									}
-								});
+							jQuery.each( jQuery('body').find('div#call_for_credit'), function(){
+								let current_element = jQuery(this);
+								let is_visible = current_element.is(':visible');
+								if ( false === is_visible ) {
+									current_element.remove();
+								}
 							});
 
 						";
@@ -194,8 +203,73 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 				/* translators: %s: singular name for store credit */
 				$smart_coupon_store_gift_page_text = ( ! empty( $smart_coupon_store_gift_page_text ) ) ? $smart_coupon_store_gift_page_text . ' ' : ( ! empty( $store_credit_label['singular'] ) ? sprintf( __( 'Purchase %s worth', 'woocommerce-smart-coupons' ), ucwords( $store_credit_label['singular'] ) ) : __( 'Purchase credit worth', 'woocommerce-smart-coupons' ) ) . ' ';
 
-				include apply_filters( 'woocommerce_call_for_credit_form_template', 'templates/call-for-credit-form.php' );
+				$custom_classes = array(
+					'container' => '',
+					'row'       => '',
+					'label'     => '',
+					'input'     => '',
+					'error'     => '',
+				);
 
+				$custom_classes = apply_filters( 'wc_sc_call_for_credit_template_custom_classes', $custom_classes );
+
+				$currency_symbol = get_woocommerce_currency_symbol();
+
+				$input = array(
+					'type'         => 'number',
+					'autocomplete' => 'off',
+					'autofocus'    => 'autofocus',
+					'height'       => '',
+					'max'          => '',
+					'maxlength'    => '',
+					'min'          => '1',
+					'minlength'    => '',
+					'name'         => '',
+					'pattern'      => '',
+					'placeholder'  => '',
+					'required'     => 'required',
+					'size'         => '',
+					'step'         => 'any',
+					'width'        => '',
+				);
+
+				$input = apply_filters( 'wc_sc_call_for_credit_template_input', $input, array( 'source' => $this ) );
+
+				$input = array_filter( $input );
+
+				$input['id']    = 'credit_called';
+				$input['name']  = $input['id'];
+				$input['value'] = '';
+
+				$allowed_html = wp_kses_allowed_html( 'post' );
+
+				$allowed_html['input'] = array(
+					'aria-describedby' => true,
+					'aria-details'     => true,
+					'aria-label'       => true,
+					'aria-labelledby'  => true,
+					'aria-hidden'      => true,
+				);
+				$input_element         = '<input ';
+				foreach ( $input as $attribute => $value ) {
+					$input_element                      .= $attribute . '="' . esc_attr( $value ) . '" ';
+					$allowed_html['input'][ $attribute ] = true;
+				}
+				$input_element .= ' />';
+
+				if ( function_exists( 'wc_get_template' ) ) {
+					$args = array(
+						'custom_classes'  => $custom_classes,
+						'currency_symbol' => $currency_symbol,
+						'smart_coupon_store_gift_page_text' => $smart_coupon_store_gift_page_text,
+						'allowed_html'    => $allowed_html,
+						'input'           => $input,
+						'input_element'   => $input_element,
+					);
+					wc_get_template( 'call-for-credit-form.php', $args, '', plugin_dir_path( WC_SC_PLUGIN_FILE ) . 'templates/' );
+				} else {
+					include apply_filters( 'woocommerce_call_for_credit_form_template', 'templates/call-for-credit-form.php' );
+				}
 			}
 		}
 
@@ -229,7 +303,7 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 			} else {
 				$product_id = ( ! empty( $product->id ) ) ? $product->id : 0;
 			}
-			$coupons = get_post_meta( $product_id, '_coupon_title', true );
+			$coupons = $this->get_coupon_titles( array( 'product_object' => $product ) );
 
 			if ( ! empty( $coupons ) && $product instanceof WC_Product && $product->get_price() === '' && $this->is_coupon_amount_pick_from_product_price( $coupons ) && ! ( $product->get_price() > 0 ) ) {
 				return true;
@@ -252,7 +326,7 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 			} else {
 				$product_id = ( ! empty( $product->id ) ) ? $product->id : 0;
 			}
-			$coupons = get_post_meta( $product_id, '_coupon_title', true );
+			$coupons = $this->get_coupon_titles( array( 'product_object' => $product ) );
 
 			$is_product            = is_a( $product, 'WC_Product' );
 			$is_purchasable_credit = $this->is_coupon_amount_pick_from_product_price( $coupons );
@@ -276,7 +350,9 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 
 			foreach ( $cart_object->cart_contents as $key => $value ) {
 
-				$product = $value['data'];
+				$product       = $value['data'];
+				$credit_amount = ( ! empty( $value['credit_amount'] ) ) ? $value['credit_amount'] : 0;
+
 				if ( $this->is_wc_gte_30() ) {
 					$product_type  = ( is_object( $product ) && is_callable( array( $product, 'get_type' ) ) ) ? $product->get_type() : '';
 					$product_id    = ( in_array( $product_type, array( 'variable', 'variable-subscription', 'variation', 'subscription_variation' ), true ) ) ? ( ( is_object( $product ) && is_callable( array( $product, 'get_parent_id' ) ) ) ? $product->get_parent_id() : 0 ) : ( ( is_object( $product ) && is_callable( array( $product, 'get_id' ) ) ) ? $product->get_id() : 0 );
@@ -286,23 +362,21 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 					$product_price = ( ! empty( $product->price ) ) ? $product->price : 0;
 				}
 
-				$coupons = get_post_meta( $product_id, '_coupon_title', true );
+				$coupons = $this->get_coupon_titles( array( 'product_object' => $product ) );
 
 				if ( ! empty( $coupons ) && $this->is_coupon_amount_pick_from_product_price( $coupons ) && ! ( $product_price > 0 ) ) {
 
-					if ( isset( $credit_called[ $key ] ) ) {
-						$price = ( ! empty( $credit_called[ $key ] ) ) ? $credit_called[ $key ] : 0;
+					$price = ( ! empty( $credit_called[ $key ] ) ) ? $credit_called[ $key ] : $credit_amount;
 
-						if ( $price <= 0 ) {
-							WC()->cart->set_quantity( $key, 0 );    // Remove product from cart if price is not found either in session or in product.
-							continue;
-						}
+					if ( $price <= 0 ) {
+						WC()->cart->set_quantity( $key, 0 );    // Remove product from cart if price is not found either in session or in product.
+						continue;
+					}
 
-						if ( $this->is_wc_gte_30() ) {
-							$cart_object->cart_contents[ $key ]['data']->set_price( $price );
-						} else {
-							$cart_object->cart_contents[ $key ]['data']->price = $price;
-						}
+					if ( $this->is_wc_gte_30() ) {
+						$cart_object->cart_contents[ $key ]['data']->set_price( $price );
+					} else {
+						$cart_object->cart_contents[ $key ]['data']->price = $price;
 					}
 				}
 			}
@@ -327,7 +401,7 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 					$product_id = ( ! empty( $product->id ) ) ? $product->id : 0;
 				}
 
-				$coupons = get_post_meta( $product_id, '_coupon_title', true );
+				$coupons = $this->get_coupon_titles( array( 'product_object' => $product ) );
 
 				// Override product price only if product contains coupon and price is already an empty string.
 				if ( ! empty( $coupons ) && '' === $price ) {
@@ -352,9 +426,33 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 			$gift_certificate = ( is_object( WC()->session ) && is_callable( array( WC()->session, 'get' ) ) ) ? WC()->session->get( 'credit_called' ) : array();
 
 			if ( ! empty( $gift_certificate ) && isset( $gift_certificate[ $cart_item_key ] ) && ! empty( $gift_certificate[ $cart_item_key ] ) ) {
-				return wc_price( $gift_certificate[ $cart_item_key ] );
+				$price = $gift_certificate[ $cart_item_key ];
+				// Hook for 3rd party plugin to modify value of the credit.
+				$price = apply_filters(
+					'wc_sc_credit_called_price_cart',
+					$price,
+					array(
+						'source'        => $this,
+						'cart_item_key' => $cart_item_key,
+						'cart_item'     => $cart_item,
+						'credit_called' => $gift_certificate,
+					)
+				);
+				return wc_price( $price );
 			} elseif ( ! empty( $cart_item['credit_amount'] ) ) {
-				return wc_price( $cart_item['credit_amount'] );
+				$price = $cart_item['credit_amount'];
+				// Hook for 3rd party plugin to modify value of the credit.
+				$price = apply_filters(
+					'wc_sc_credit_called_price_cart',
+					$price,
+					array(
+						'source'        => $this,
+						'cart_item_key' => $cart_item_key,
+						'cart_item'     => $cart_item,
+						'credit_called' => $gift_certificate,
+					)
+				);
+				return wc_price( $price );
 			}
 
 			return $product_price;
@@ -527,17 +625,15 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 
 			foreach ( WC()->cart->cart_contents as $product ) {
 
-				if ( empty( $product['product_id'] ) ) {
-					$product['product_id'] = ( ! empty( $product['variation_id'] ) ) ? wp_get_post_parent_id( $product['variation_id'] ) : 0;
-				}
-
-				if ( empty( $product['product_id'] ) ) {
+				if ( ! empty( $product['variation_id'] ) ) {
+					$_product = wc_get_product( $product['variation_id'] );
+				} elseif ( ! empty( $product['product_id'] ) ) {
+					$_product = wc_get_product( $product['product_id'] );
+				} else {
 					continue;
 				}
 
-				$coupon_titles = get_post_meta( $product['product_id'], '_coupon_title', true );
-
-				$_product = wc_get_product( $product['product_id'] );
+				$coupon_titles = $this->get_coupon_titles( array( 'product_object' => $_product ) );
 
 				$price = $_product->get_price();
 
@@ -774,15 +870,11 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 
 			foreach ( $order_items as $item_id => $order_item ) {
 
-				if ( $this->is_wc_gte_30() ) {
-					$item_sc_called_credit = ( is_object( $order_item ) && is_callable( array( $order_item, 'get_meta' ) ) ) ? $order_item->get_meta( 'sc_called_credit' ) : array();
-				} else {
-					$item_sc_called_credit = ( ! empty( $order_item['sc_called_credit'] ) ) ? $order_item['sc_called_credit'] : 0;
-				}
+				$item_sc_called_credit = ( is_object( $order_item ) && is_callable( array( $order_item, 'get_meta' ) ) ) ? $order_item->get_meta( 'sc_called_credit' ) : ( ( ! empty( $order_item['sc_called_credit'] ) ) ? $order_item['sc_called_credit'] : 0 );
 
 				if ( ! empty( $item_sc_called_credit ) ) {
 
-					$product = $order->get_product_from_item( $order_item );
+					$product = ( is_object( $order_item ) && is_callable( array( $order_item, 'get_product' ) ) ) ? $order_item->get_product() : $order->get_product_from_item( $order_item );
 
 					if ( ! is_object( $product ) ) {
 						continue;
@@ -796,7 +888,7 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 					} else {
 						$product_id = ( ! empty( $product->id ) ) ? $product->id : 0;
 						$item_qty   = ( ! empty( $order_item['qty'] ) ) ? $order_item['qty'] : 1;
-						$item_tax   = ( ! empty( $order_item['line_tax'] ) ) ? $order_item['line_tax'] : 0;
+						$item_tax   = ( ! empty( $order_item['line_subtotal_tax'] ) ) ? $order_item['line_subtotal_tax'] : 0;
 					}
 
 					if ( true === $prices_include_tax && ! $this->is_generated_store_credit_includes_tax() ) {
@@ -813,7 +905,7 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 						$qty = 1;
 					}
 
-					$coupon_titles = get_post_meta( $product_id, '_coupon_title', true );
+					$coupon_titles = $this->get_coupon_titles( array( 'product_object' => $product ) );
 
 					if ( $coupon_titles ) {
 
@@ -912,7 +1004,7 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 				return;
 			}
 
-			$coupon_titles = get_post_meta( $product_id, '_coupon_title', true );
+			$coupon_titles = $this->get_coupon_titles( array( 'product_object' => $product ) );
 
 			if ( $this->is_coupon_amount_pick_from_product_price( $coupon_titles ) && $product_price > 0 ) {
 				if ( $this->is_wc_gte_30() ) {
@@ -953,6 +1045,8 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 		/**
 		 * Save entered credit value by customer in cart item data
 		 *
+		 * This function is only for simple products.
+		 *
 		 * @param array $cart_item_data The cart item data.
 		 * @param int   $product_id The product id.
 		 * @param int   $variation_id The variation id.
@@ -990,6 +1084,8 @@ if ( ! class_exists( 'WC_SC_Purchase_Credit' ) ) {
 
 		/**
 		 * Save entered credit value by customer in session
+		 *
+		 * This function is only for simple products.
 		 *
 		 * @param string $cart_item_key The cart item key.
 		 * @param int    $product_id The product id.

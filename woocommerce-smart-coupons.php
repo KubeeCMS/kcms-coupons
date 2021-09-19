@@ -1,20 +1,21 @@
 <?php
 /**
- * Plugin Name: Smart Coupons
- * Plugin URI: https://github.com/KubeeCMS/Smart-Coupons/
- * Description: <strong>KubeeCMS Smart Coupons</strong> lets customers buy gift certificates, store credits or coupons easily. They can use purchased credits themselves or gift to someone else.
- * Version: 4.7.7
- * Author: KubeeCMS
+ * Plugin Name: Coupons
+ * Plugin URI: https://github.com/KubeeCMS/kcms-coupons/
+ * Description: <strong>Smart Coupons</strong> lets customers buy gift certificates, store credits or coupons easily. They can use purchased credits themselves or gift to someone else.
+ * Version: 4.27.0
+ * Author: StoreApps
  * Author URI: https://github.com/KubeeCMS/
- * Developer: KubeeCMS
+ * Developer: StoreApps
  * Developer URI: https://github.com/KubeeCMS/
  * Requires at least: 4.4
- * Tested up to: 5.4.2
+ * Tested up to: 5.8.0
  * WC requires at least: 3.0.0
- * WC tested up to: 4.3.0
+ * WC tested up to: 5.6.0
  * Text Domain: woocommerce-smart-coupons
  * Domain Path: /languages
- * Copyright (c) 2014-2020 Kubee.
+ * Woo: 18729:05c45f2aa466106a466de4402fff9dde
+ * Copyright (c) 2014-2021 KubeeCMS.
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -56,8 +57,6 @@ if ( is_woocommerce_active() ) {
 	if ( ! defined( 'WC_SC_PLUGIN_DIRNAME' ) ) {
 		define( 'WC_SC_PLUGIN_DIRNAME', dirname( plugin_basename( __FILE__ ) ) );
 	}
-
-	include_once 'includes/sc-functions.php';
 
 	include_once 'includes/class-wc-smart-coupons.php';
 

@@ -4,7 +4,7 @@
  *
  * @author      StoreApps
  * @since       3.3.0
- * @version     1.1.3
+ * @version     1.5.0
  * @package     WooCommerce Smart Coupons
  */
 
@@ -45,6 +45,9 @@ if ( ! class_exists( 'WCS_SC_Compatibility' ) ) {
 				add_filter( 'wc_sc_endpoint_account_settings_after_key', array( $this, 'endpoint_account_settings_after_key' ), 10, 2 );
 				add_filter( 'wc_sc_coupon_type', array( $this, 'valid_display_type' ), 11, 3 );
 				add_filter( 'wc_sc_coupon_amount', array( $this, 'valid_display_amount' ), 11, 2 );
+				add_filter( 'wc_sc_coupon_design_thumbnail_src_set', array( $this, 'coupon_design_thumbnail_src_set' ), 10, 2 );
+				add_filter( 'wc_sc_percent_discount_types', array( $this, 'percent_discount_types' ), 10, 2 );
+				add_filter( 'wc_sc_is_auto_apply', array( $this, 'is_auto_apply' ), 10, 2 );
 			}
 
 		}
@@ -284,9 +287,13 @@ if ( ! class_exists( 'WCS_SC_Compatibility' ) ) {
 
 			if ( ! empty( $old_order_item_ids ) ) {
 
+				$old_order_item_ids = array_map( 'absint', $old_order_item_ids );
+
 				$meta_keys   = array( '_variation_id', '_product_id' );
 				$how_many    = count( $old_order_item_ids );
 				$placeholder = array_fill( 0, $how_many, '%d' );
+
+				$meta_keys = esc_sql( $meta_keys );
 
 				// @codingStandardsIgnoreStart.
 				$query_to_fetch_product_ids = $wpdb->prepare(
@@ -296,9 +303,9 @@ if ( ! class_exists( 'WCS_SC_Compatibility' ) ) {
 						WHEN woim.meta_key = %s AND woim.meta_value > 0 THEN woim.meta_value
 					END) AS product_id
 					FROM {$wpdb->prefix}woocommerce_order_itemmeta AS woim
-					WHERE woim.order_item_id IN ( " . implode( ',', $placeholder ) . ' )
+					WHERE woim.order_item_id IN ( " . implode( ',', $placeholder ) . " )
 						AND woim.meta_key IN ( %s, %s )
-					GROUP BY woim.order_item_id',
+					GROUP BY woim.order_item_id",
 					array_merge( $meta_keys, $old_order_item_ids, array_reverse( $meta_keys ) )
 				);
 				// @codingStandardsIgnoreEnd.
@@ -528,7 +535,19 @@ if ( ! class_exists( 'WCS_SC_Compatibility' ) ) {
 			$is_recursive = false;
 			if ( ! empty( $order_items ) ) {
 				foreach ( $order_items as $order_item ) {
-					$send_coupons_on_renewals = ( ! empty( $order_item['product_id'] ) ) ? get_post_meta( $order_item['product_id'], 'send_coupons_on_renewals', true ) : 'no';
+					$send_coupons_on_renewals = 'no';
+					if ( ! empty( $order_item['variation_id'] ) ) {
+						$coupon_titles = get_post_meta( $order_item['variation_id'], '_coupon_title', true );
+						if ( empty( $coupon_titles ) ) {
+							$send_coupons_on_renewals = get_post_meta( $order_item['product_id'], 'send_coupons_on_renewals', true );
+						} else {
+							$send_coupons_on_renewals = get_post_meta( $order_item['variation_id'], 'send_coupons_on_renewals', true );
+						}
+					} elseif ( ! empty( $order_item['product_id'] ) ) {
+						$send_coupons_on_renewals = get_post_meta( $order_item['product_id'], 'send_coupons_on_renewals', true );
+					} else {
+						continue;
+					}
 					if ( 'yes' === $send_coupons_on_renewals ) {
 						$is_recursive = true;
 						break;  // if in any order item recursive is enabled, it will set coupon_sent as 'no'.
@@ -654,13 +673,15 @@ if ( ! class_exists( 'WCS_SC_Compatibility' ) ) {
 							$items_to_apply_credit = array();
 							if ( count( $coupon_product_ids ) > 0 || count( $coupon_category_ids ) > 0 ) {
 								foreach ( $renewal_order_items as $renewal_order_item_id => $renewal_order_item ) {
-									$product_category_ids = wc_get_product_cat_ids( $renewal_order_item['product_id'] );
+									$renewal_product_id   = ( is_object( $renewal_order_item ) && is_callable( array( $renewal_order_item, 'get_product_id' ) ) ) ? $renewal_order_item->get_product_id() : $renewal_order_item['product_id'];
+									$renewal_variation_id = ( is_object( $renewal_order_item ) && is_callable( array( $renewal_order_item, 'get_variation_id' ) ) ) ? $renewal_order_item->get_variation_id() : $renewal_order_item['variation_id'];
+									$product_category_ids = wc_get_product_cat_ids( $renewal_product_id );
 									if ( count( $coupon_product_ids ) > 0 && count( $coupon_category_ids ) > 0 ) {
-										if ( ( in_array( $renewal_order_item['product_id'], $coupon_product_ids, true ) || in_array( $renewal_order_item['variation_id'], $coupon_product_ids, true ) ) && count( array_intersect( $product_category_ids, $coupon_category_ids ) ) > 0 ) {
+										if ( ( in_array( $renewal_product_id, $coupon_product_ids, true ) || in_array( $renewal_variation_id, $coupon_product_ids, true ) ) && count( array_intersect( $product_category_ids, $coupon_category_ids ) ) > 0 ) {
 											$items_to_apply_credit[ $renewal_order_item_id ] = $renewal_order_item;
 										}
 									} else {
-										if ( in_array( $renewal_order_item['product_id'], $coupon_product_ids, true ) || in_array( $renewal_order_item['variation_id'], $coupon_product_ids, true ) || count( array_intersect( $product_category_ids, $coupon_category_ids ) ) > 0 ) {
+										if ( in_array( $renewal_product_id, $coupon_product_ids, true ) || in_array( $renewal_variation_id, $coupon_product_ids, true ) || count( array_intersect( $product_category_ids, $coupon_category_ids ) ) > 0 ) {
 											$items_to_apply_credit[ $renewal_order_item_id ] = $renewal_order_item;
 										}
 									}
@@ -766,7 +787,7 @@ if ( ! class_exists( 'WCS_SC_Compatibility' ) ) {
 
 			if ( count( $renewal_order->get_items() ) > 0 ) {
 				foreach ( $renewal_order->get_items() as $item ) {
-					$_product = $renewal_order->get_product_from_item( $item );
+					$_product = ( is_object( $item ) && is_callable( array( $item, 'get_product' ) ) ) ? $item->get_product() : $renewal_order->get_product_from_item( $item );
 
 					if ( $_product instanceof WC_Product ) {
 						$virtual_downloadable_item = $_product->is_downloadable() && $_product->is_virtual();
@@ -837,11 +858,15 @@ if ( ! class_exists( 'WCS_SC_Compatibility' ) ) {
 		 * @return array  $settings
 		 */
 		public function smart_coupons_settings( $settings = array() ) {
+			global $store_credit_label;
+
+			$singular = ( ! empty( $store_credit_label['singular'] ) ) ? $store_credit_label['singular'] : __( 'store credit', 'woocommerce-smart-coupons' );
 
 			$wc_subscriptions_options = array(
 				array(
-					'name'          => __( 'Recurring Subscriptions', 'woocommerce-smart-coupons' ),
-					'desc'          => __( 'Use store credit applied in first subscription order for subsequent renewals until credit reaches zero', 'woocommerce-smart-coupons' ),
+					'name'          => __( 'Recurring subscriptions', 'woocommerce-smart-coupons' ),
+					/* translators: %s: Label for store credit */
+					'desc'          => sprintf( __( 'Use %s applied in first subscription order for subsequent renewals until credit reaches zero', 'woocommerce-smart-coupons' ), strtolower( $singular ) ),
 					'id'            => 'pay_from_smart_coupon_of_original_order',
 					'type'          => 'checkbox',
 					'default'       => 'no',
@@ -1066,6 +1091,72 @@ if ( ! class_exists( 'WCS_SC_Compatibility' ) ) {
 				$coupon_amount = wc_price( $coupon_amount );
 			}
 			return $coupon_amount;
+		}
+
+		/**
+		 * Coupon design thumbnail src set for subscription coupons
+		 *
+		 * @param array $src_set Existing src set.
+		 * @param array $args Additional arguments.
+		 * @return array
+		 */
+		public function coupon_design_thumbnail_src_set( $src_set = array(), $args = array() ) {
+			$coupon = ( ! empty( $args['coupon_object'] ) ) ? $args['coupon_object'] : null;
+			if ( $this->is_wc_gte_30() ) {
+				$discount_type = ( is_object( $coupon ) && is_callable( array( $coupon, 'get_discount_type' ) ) ) ? $coupon->get_discount_type() : '';
+			} else {
+				$discount_type = ( ! empty( $coupon->discount_type ) ) ? $coupon->discount_type : '';
+			}
+			if ( ! empty( $discount_type ) ) {
+				switch ( $discount_type ) {
+					case 'sign_up_fee':
+					case 'sign_up_fee_percent':
+						$src_set = array(
+							'subs-discount-voucher.svg',
+						);
+						break;
+
+					case 'recurring_fee':
+					case 'recurring_percent':
+						$src_set = array(
+							'subs-calendar-discount.svg',
+						);
+						break;
+				}
+			}
+			return $src_set;
+		}
+
+		/**
+		 * Get percent discount types fromm subscriptions
+		 *
+		 * @param array $discount_types Existing discount tyeps.
+		 * @param array $args Additional arguments.
+		 * @return array
+		 */
+		public function percent_discount_types( $discount_types = array(), $args = array() ) {
+			$subs_percent_discount_types = array(
+				'sign_up_fee_percent',
+				'recurring_percent',
+			);
+			$discount_types              = array_merge( $discount_types, $subs_percent_discount_types );
+			return $discount_types;
+		}
+
+		/**
+		 * Function to check if a coupon can be auto applied or not
+		 *
+		 * @param boolean $is_auto_apply Is auto apply.
+		 * @param array   $args Additional arguments.
+		 * @return boolean
+		 */
+		public function is_auto_apply( $is_auto_apply = true, $args = array() ) {
+			$cart_total                 = ( ! empty( $args['cart_total'] ) ) ? floatval( $args['cart_total'] ) : 0;
+			$cart_contains_subscription = self::is_cart_contains_subscription();
+			if ( false === $is_auto_apply && empty( $cart_total ) && true === $cart_contains_subscription ) {
+				$is_auto_apply = true;
+			}
+			return $is_auto_apply;
 		}
 
 		/**

@@ -4,7 +4,7 @@
  *
  * @author      StoreApps
  * @since       4.0.0
- * @version     1.1.1
+ * @version     1.2.0
  *
  * @package     woocommerce-smart-coupons/includes/
  */
@@ -148,8 +148,9 @@ if ( ! class_exists( 'WC_SC_Admin_Notifications' ) ) {
 			$is_show_review_notice = get_option( 'wc_sc_is_show_review_notice' );
 			$is_coupon_enabled     = get_option( 'woocommerce_enable_coupons' );
 			$get_post_type         = ( ! empty( $post->post_type ) ) ? $post->post_type : '';
-			$get_page              = ( ! empty( $_GET['page'] ) ) ? wc_clean( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore
-			$get_tab               = ( ! empty( $_GET['tab'] ) ) ? wc_clean( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore
+			$get_page              = ( ! empty( $_GET['page'] ) ) ? wc_clean( wp_unslash( $_GET['page'] ) ) : '';  // phpcs:ignore
+			$get_tab               = ( ! empty( $_GET['tab'] ) ) ? wc_clean( wp_unslash( $_GET['tab'] ) ) : '';    // phpcs:ignore
+			$design                = get_option( 'wc_sc_setting_coupon_design', 'basic' );
 
 			$is_page = ( in_array( $pagenow, $valid_pagenow, true ) || in_array( $get_post_type, $valid_post_types, true ) || ( 'admin.php' === $pagenow && ( 'wc-smart-coupons' === $get_page || 'wc-smart-coupons' === $get_tab ) ) );
 
@@ -242,6 +243,34 @@ if ( ! class_exists( 'WC_SC_Admin_Notifications' ) ) {
 				<?php
 			}
 
+			if ( $is_page && 'custom-design' === $design ) {
+				?>
+				<div class="updated fade error" style="background-color: #f0fff0;">
+					<p>
+						<?php
+						echo sprintf(
+							/* translators: 1: WooCommerce Smart Coupons 2: Link for the Smart Coupons settings */
+							esc_html__( '%1$s: You are using a custom coupon style which is planned to be removed from the plugin in upcoming versions. New, improved styles & colors are added in the version 4.9.0. We would request you to choose a color scheme & a style for coupon from the newly added colors & styles. You can do this from %2$s.', 'woocommerce-smart-coupons' ),
+							'<strong>' . esc_html__( 'WooCommerce Smart Coupons', 'woocommerce-smart-coupons' ) . '</strong>',
+							'<a href="' . esc_url(
+								add_query_arg(
+									array(
+										'page' => 'wc-settings',
+										'tab'  => 'wc-smart-coupons',
+									),
+									admin_url( 'admin.php' )
+								)
+							) . '" target="_blank">' . esc_html__(
+								'Smart Coupons settings',
+								'woocommerce-smart-coupons'
+							) . '</a>'
+						);
+						?>
+					</p>
+				</div>
+				<?php
+			}
+
 		}
 
 		/**
@@ -269,7 +298,7 @@ if ( ! class_exists( 'WC_SC_Admin_Notifications' ) ) {
 					</style>
 					<?php
 					/* translators: %s: link to review WooCommerce Smart Coupons */
-					$sc_rating_text = wp_kses_post( sprintf( __( 'Liked WooCommerce Smart Coupons? Leave us a %s. A huge thank you from WooCommerce & StoreApps in advance!', 'woocommerce-smart-coupons' ), '<a target="_blank" href="' . esc_url( 'https://woocommerce.com/products/smart-coupons/#comments' ) . '" style="color: #96588a;">5-star rating here</a>' ) );
+					$sc_rating_text = wp_kses_post( sprintf( __( 'Liked WooCommerce Smart Coupons? Leave us a %s. A huge thank you from WooCommerce & StoreApps in advance!', 'woocommerce-smart-coupons' ), '<a target="_blank" href="' . esc_url( 'https://woocommerce.com/products/smart-coupons/#comments' ) . '" style="color: #5850EC;">5-star rating here</a>' ) );
 				}
 			}
 
@@ -295,7 +324,7 @@ if ( ! class_exists( 'WC_SC_Admin_Notifications' ) ) {
 
 				if ( in_array( $get_page, $sc_pages, true ) || 'shop_coupon' === $get_post_type || 'wc-smart-coupons' === $get_tab ) {
 					/* translators: %s: link to submit idea for Smart Coupons on WooCommerce idea board */
-					$sc_text = sprintf( __( 'Have a feature request? Submit it on our %s.', 'woocommerce-smart-coupons' ), '<a href="' . esc_url( 'http://ideas.woocommerce.com/forums/133476-woocommerce?category_id=163716' ) . '" target="_blank" style="color: #96588a;">idea board</a>' );
+					$sc_text = sprintf( __( 'Have a feature request? Submit it on our %s.', 'woocommerce-smart-coupons' ), '<a href="' . esc_url( 'http://ideas.woocommerce.com/forums/133476-woocommerce?category_id=163716' ) . '" target="_blank" style="color: #5850EC;">idea board</a>' );
 				}
 			}
 

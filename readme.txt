@@ -1,16 +1,16 @@
-=== Smart Coupons ===
-Contributors: storeapps, niravmehta, ratnakar.dubey, Tarun.Parswani, Mansi Shah, Kishan Ranawat
-Donate link: https://www.github.com/kubeecms/smart-coupons/
-Tags: kubeecommerce, coupon, credit, store credit, gift, certificate, voucher, discount, gift certificate, gift voucher, customer, self service
-Requires at least: 3.5
-Tested up to: 5.4.2
-Stable tag: 4.7.7
+=== WooCommerce Smart Coupons ===
+Contributors: storeapps, niravmehta, ratnakar.dubey, Tarun.Parswani, Mansi Shah, Chandan Kumar, Balakrishnan
+Donate link: https://www.storeapps.org/
+Tags: woocommerce, coupon, credit, store credit, gift, certificate, voucher, discount, gift certificate, gift voucher, customer, self service
+Requires at least: 4.4
+Tested up to: 5.8.0
+Stable tag: 4.27.0
 
-Powerful, "all in one" solution for gift certificates, store credits, discount coupons and vouchers. Allows customers to buy credits for themselves or gift them to others. Unique "Apply Coupon with One Click" technology during checkout, tight integration with kubeecommerce and automatic maintenance.
+Powerful, "all in one" solution for gift certificates, store credits, discount coupons and vouchers. Allows customers to buy credits for themselves or gift them to others. Unique "Apply Coupon with One Click" technology during checkout, tight integration with WooCommerce and automatic maintenance.
 
 == Description ==
 
-kubeecommerce Smart Coupons is the most powerful, all in one solution for gift certificates, store credits, discount coupons and vouchers.
+WooCommerce Smart Coupons is the most powerful, all in one solution for gift certificates, store credits, discount coupons and vouchers.
 
 Here's what you can do with this plugin:
 
@@ -31,7 +31,7 @@ Here's what you can do with this plugin:
 * Tight security - coupons can be associated with customers and credits can be used only by their beneficiaries.
 * Unique "Apply Coupon with One Click" technology - logged in customers will see available coupons on the cart / checkout pages and can apply a coupon with single click. No longer digging into mailboxes and time / attention waste during the critical checkout process.
 * Offer Credits at a Discount - Link a coupon with any product and set the product's price lower than coupon's value. Offering a discounted gift certificate. We've seen huge increase in sales this way. You get money in advance, and customer keeps coming back to the store to buy more. **In our tests we actually discovered 84% customers bought more than the gift certificate value itself.**
-* Carries forward benefits of kubeecommerce coupon system: limiting coupons to specific products, validity period, usage times, expiry date etc.
+* Carries forward benefits of WooCommerce coupon system: limiting coupons to specific products, validity period, usage times, expiry date etc.
 * Can search for coupons issued to a customer by their email address
 * Notifies customers about remaining store credit balance in order email
 * Can even duplicate an existing coupon
@@ -39,14 +39,14 @@ Here's what you can do with this plugin:
 
 == Installation ==
 
-1. Ensure you have latest version of [kubeecommerce](https://wordpress.org/plugins/kubeecommerce/) plugin installed
-2. Unzip and upload the folder 'kubeecommerce-smart-coupons' to your `/wp-content/plugins/` directory
-3. Activate 'kubeecommerce Smart Coupons' through the 'Plugins' menu in WordPress
+1. Ensure you have latest version of [WooCommerce](https://wordpress.org/plugins/woocommerce/) plugin installed
+2. Unzip and upload the folder 'woocommerce-smart-coupons' to your `/wp-content/plugins/` directory
+3. Activate 'WooCommerce Smart Coupons' through the 'Plugins' menu in WordPress
 
 == Usage ==
 
 CREATING A COUPON
-1. Go to Coupons settings in kubeecommerce
+1. Go to Coupons settings in WooCommerce
 2. Add new coupons as usual - if you want to create credit based coupon - Store Credit or Gift Certificate, use "Store Credit / Gift Certificate" in type
 3. Add other coupon details as usual
 4. Save the coupon!
@@ -61,6 +61,6 @@ LINKING A COUPON WITH A PRODUCT
 7. Click 'Update' or 'Publish' to save the changes
 
 IMPORTING COUPONS IN BULK
-Refer to the "sample.csv" file in the plugin root directory. Create your import file in the same structure and import it via Coupons administration in kubeecommerce.
+Refer to the "sample.csv" file in the plugin root directory. Create your import file in the same structure and import it via Coupons administration in WooCommerce.
 
-Go to "kubeecommerce -> Settings -> Smart Coupons" from WordPress sidebar menu for additional settings for this plugin.
+Go to "WooCommerce -> Settings -> Smart Coupons" from WordPress sidebar menu for additional settings for this plugin.

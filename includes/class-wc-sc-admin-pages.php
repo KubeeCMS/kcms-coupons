@@ -4,7 +4,7 @@
  *
  * @author      StoreApps
  * @since       3.3.0
- * @version     1.1.5
+ * @version     1.4.0
  *
  * @package     woocommerce-smart-coupons/includes/
  */
@@ -33,7 +33,7 @@ if ( ! class_exists( 'WC_SC_Admin_Pages' ) ) {
 		private function __construct() {
 
 			add_filter( 'views_edit-shop_coupon', array( $this, 'smart_coupons_views_row' ) );
-			add_action( 'admin_enqueue_scripts', array( $this, 'generate_coupon_styles_and_scripts' ) );
+			add_action( 'admin_enqueue_scripts', array( $this, 'generate_coupon_styles_and_scripts' ), 99 );
 			add_action( 'admin_notices', array( $this, 'woocommerce_show_import_message' ) );
 
 			add_action( 'admin_menu', array( $this, 'woocommerce_coupon_admin_menu' ) );
@@ -298,7 +298,7 @@ if ( ! class_exists( 'WC_SC_Admin_Pages' ) ) {
 		 * Function to show import message
 		 */
 		public function woocommerce_show_import_message() {
-			global $pagenow,$typenow;
+			global $pagenow, $typenow;
 
 			$get_show_import_message = ( ! empty( $_GET['show_import_message'] ) ) ? wc_clean( wp_unslash( $_GET['show_import_message'] ) ) : ''; // phpcs:ignore
 			$get_imported            = ( ! empty( $_GET['imported'] ) ) ? wc_clean( wp_unslash( $_GET['imported'] ) ) : 0; // phpcs:ignore
@@ -325,24 +325,29 @@ if ( ! class_exists( 'WC_SC_Admin_Pages' ) ) {
 		public function smart_coupons_script_in_footer() {
 
 			global $pagenow;
-
-			if ( empty( $pagenow ) || 'admin.php' !== $pagenow ) {
+			if ( empty( $pagenow ) ) {
 				return;
 			}
-			$get_page = ( ! empty( $_GET['page'] ) ) ? wc_clean( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore
 
-			if ( 'wc-smart-coupons' === $get_page ) {
+			$get_page  = ( ! empty( $_GET['page'] ) ) ? wc_clean( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore
+			$post_type = ( ! empty( $_GET['post_type'] ) ) ? wc_clean( wp_unslash( $_GET['post_type'] ) ) : ''; // phpcs:ignore
+
+			if ( in_array( $get_page, array( 'wc-smart-coupons', 'sc-about', 'sc-faqs' ), true ) || 'shop_coupon' === $post_type ) {
 				?>
 				<script type="text/javascript">
 					jQuery(function(){
-						// Highlight Coupons menu when visiting Bulk Generate/Import Coupons/Send Store Credit tab.
-						jQuery(document).on('ready', function(){
-							var element = jQuery('li#toplevel_page_woocommerce ul li').find('a[href="edit.php?post_type=shop_coupon"]');
-							element.addClass('current');
-							element.parent().addClass('current');
-						});
+						let is_marketing = decodeURIComponent( '<?php echo rawurlencode( ( $this->is_wc_gte_44() ) ? 'yes' : 'no' ); ?>' );
+						// Highlight Coupons menu when visiting Bulk Generate/Import Coupons/Send Store Credit/Coupon category tab.
+						let sa_wc_menu_selector           = 'toplevel_page_woocommerce';
+						let sa_wc_marketing_menu_selector = 'toplevel_page_woocommerce-marketing';
+						let element = jQuery('li#' + sa_wc_menu_selector);
+						if ( 'yes' === is_marketing ) {
+							element = jQuery('li#' + sa_wc_marketing_menu_selector);
+						}
+						element.find('ul li a[href="edit.php?post_type=shop_coupon"]').addClass('current');
+						element.find('ul li a[href="edit.php?post_type=shop_coupon"]').parent().addClass('current');
 						// Show notification about coupon CSV export
-						jQuery(window).load(function(){
+						jQuery(window).on('load', function(){
 							let target_element = jQuery('#wc_sc_coupon_background_progress');
 							let is_move = ( target_element ) ? target_element.parent().hasClass('woocommerce-layout__notice-list-hide') : false;
 							if ( true === is_move ) {
@@ -509,14 +514,22 @@ if ( ! class_exists( 'WC_SC_Admin_Pages' ) ) {
 		 * Function to add submenu page for Coupon CSV Import
 		 */
 		public function woocommerce_coupon_admin_menu() {
-			add_submenu_page( 'woocommerce', __( 'Smart Coupon', 'woocommerce-smart-coupons' ), __( 'Smart Coupon', 'woocommerce-smart-coupons' ), 'manage_woocommerce', 'wc-smart-coupons', array( $this, 'admin_page' ) );
+			if ( $this->is_wc_gte_44() ) {
+				add_submenu_page( 'woocommerce-marketing', __( 'Smart Coupon', 'woocommerce-smart-coupons' ), __( 'Smart Coupon', 'woocommerce-smart-coupons' ), 'manage_woocommerce', 'wc-smart-coupons', array( $this, 'admin_page' ) );
+			} else {
+				add_submenu_page( 'woocommerce', __( 'Smart Coupon', 'woocommerce-smart-coupons' ), __( 'Smart Coupon', 'woocommerce-smart-coupons' ), 'manage_woocommerce', 'wc-smart-coupons', array( $this, 'admin_page' ) );
+			}
 		}
 
 		/**
 		 * Function to remove submenu link for Smart Coupons
 		 */
 		public function woocommerce_coupon_admin_head() {
-			remove_submenu_page( 'woocommerce', 'wc-smart-coupons' );
+			if ( $this->is_wc_gte_44() ) {
+				remove_submenu_page( 'woocommerce-marketing', 'wc-smart-coupons' );
+			} else {
+				remove_submenu_page( 'woocommerce', 'wc-smart-coupons' );
+			}
 		}
 
 		/**
@@ -941,10 +954,6 @@ if ( ! class_exists( 'WC_SC_Admin_Pages' ) ) {
 			}
 			$admin_post_types = new WC_Admin_Post_Types();
 
-			$upload_url  = wp_upload_dir();
-			$upload_path = $upload_url['path'];
-			$assets_path = str_replace( array( 'http:', 'https:' ), '', WC()->plugin_url() ) . '/assets/';
-
 			$is_post_generate_and_import        = ( isset( $_POST['generate_and_import'] ) ) ? true : false; // phpcs:ignore
 			$post_smart_coupons_generate_action = ( ! empty( $_POST['smart_coupons_generate_action'] ) ) ? wc_clean( wp_unslash( $_POST['smart_coupons_generate_action'] ) ) : ''; // phpcs:ignore
 
@@ -1197,7 +1206,7 @@ if ( ! class_exists( 'WC_SC_Admin_Pages' ) ) {
 			?>
 			<script type="text/javascript">
 				jQuery(function(){
-					var editor_id = '<?php echo esc_html( $editor_id ); ?>';
+					var editor_id = decodeURIComponent( '<?php echo rawurlencode( (string) $editor_id ); ?>' );
 					var sc_check_decimal = function( amount ){
 						var ex = /^\d*\.?(\d{1,2})?$/;
 						if ( ex.test( amount ) == false ) {
@@ -1260,9 +1269,7 @@ if ( ! class_exists( 'WC_SC_Admin_Pages' ) ) {
 						jQuery('.sc-email-content .discount-info').html(price_html + ' <?php echo ! empty( $store_credit_label['singular'] ) ? esc_html( ucwords( $store_credit_label['singular'] ) ) : esc_html__( 'Store Credit', 'woocommerce-smart-coupons' ); ?>');
 					});
 					setTimeout(wc_sc_bind_event_to_handle_changes_in_editor, 100);
-					jQuery(document).on('ready', function(){
-						jQuery('.sc-email-content #body_content_inner').prepend('<p class="sc-credit-message"></p>');
-					});
+					jQuery('.sc-email-content #body_content_inner').prepend('<p class="sc-credit-message"></p>');
 					jQuery('#' + editor_id).on('keyup change', function(){
 						var element = jQuery(this);
 						var content = '';
@@ -1396,11 +1403,7 @@ if ( ! class_exists( 'WC_SC_Admin_Pages' ) ) {
 			global $store_credit_label;
 			$get_page = ( ! empty( $_GET['page'] ) ) ? wc_clean( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore
 			if ( 'wc-smart-coupons' === $get_page ) {
-				$breadcrumbs   = array();
-				$breadcrumbs[] = array(
-					'edit.php?post_type=shop_coupon',
-					__( 'Coupons', 'woocommerce-smart-coupons' ),
-				);
+				$breadcrumbs = $this->get_default_breadcrumbs();
 				$get_tab = ( ! empty( $_GET['tab'] ) ) ? wc_clean( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore
 				switch ( $get_tab ) {
 					case 'import-smart-coupons':
@@ -1415,6 +1418,30 @@ if ( ! class_exists( 'WC_SC_Admin_Pages' ) ) {
 						break;
 				}
 			}
+			return $breadcrumbs;
+		}
+
+		/**
+		 * Default breadcrums
+		 *
+		 * @return array
+		 */
+		public function get_default_breadcrumbs() {
+			$breadcrumbs   = array();
+			$breadcrumbs[] = array(
+				'admin.php?page=wc-admin',
+				__( 'WooCommerce', 'woocommerce-smart-coupons' ),
+			);
+			if ( $this->is_wc_gte_44() ) { // To make sure that the WooCommerce is 4.4 or greater.
+				$breadcrumbs[] = array(
+					'admin.php?page=wc-admin&path=/marketing',
+					__( 'Marketing', 'woocommerce-smart-coupons' ),
+				);
+			}
+			$breadcrumbs[] = array(
+				'edit.php?post_type=shop_coupon',
+				__( 'Coupons', 'woocommerce-smart-coupons' ),
+			);
 			return $breadcrumbs;
 		}
 
