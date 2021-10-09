@@ -5,8 +5,8 @@
   "homepage": "https://github.com/KubeeCMS/kcms-coupons/",
   "authors": [
     {
-      "name": "Romeo Covaci",
-      "homepage": "https://github.com/romeocovaci"
+      "name": "KubeeCMS",
+      "homepage": "https://github.com/KubeeCMS/"
     }
   ],
   "type": "wordpress-plugin",
