@@ -4,7 +4,7 @@
  *
  * @author      StoreApps
  * @since       3.3.0
- * @version     1.9.0
+ * @version     2.1.0
  *
  * @package     woocommerce-smart-coupons/includes/
  */
@@ -431,10 +431,18 @@ if ( ! class_exists( 'WC_SC_Display_Coupons' ) ) {
 			?>
 			<script type="text/javascript">
 				jQuery(function(){
+					let couponDetails = {};
 					let product_type = decodeURIComponent( '<?php echo rawurlencode( (string) $product_type ); ?>' );
 
 					function reload_attached_coupons( product_id ) {
 						if ( product_id != '' && product_id != undefined ) {
+							jQuery('div.gift-certificates').empty().hide();
+
+							if ( product_id in couponDetails ) {
+								jQuery('div.gift-certificates').replaceWith( couponDetails[product_id] );
+								return;
+							}
+
 							jQuery.ajax({
 								url: '?wc-ajax=wc_sc_get_attached_coupons',
 								type: 'POST',
@@ -445,6 +453,7 @@ if ( ! class_exists( 'WC_SC_Display_Coupons' ) ) {
 								},
 								success: function( response ) {
 									if ( null !== response && typeof 'undefined' !== response && '' !== response ) {
+										couponDetails[ product_id ] = response;
 										jQuery('div.gift-certificates').replaceWith( response );
 									}
 								}
@@ -2186,7 +2195,7 @@ if ( ! class_exists( 'WC_SC_Display_Coupons' ) ) {
 		public function add_generated_coupon_details() {
 			global $post;
 
-			if ( 'shop_order' !== $post->post_type ) {
+			if ( empty( $post->post_type ) || 'shop_order' !== $post->post_type ) {
 				return;
 			}
 
