@@ -1,5 +1,9 @@
 *** WooCommerce Smart Coupons Changelog ***
 
+2021.10.22 - version 4.31.0
+* Fix: Auto apply coupons once removed automatically, not reapplying again even if it’s valid
+* Update: POT file
+
 2021.10.15 - version 4.30.0
 * New: Tested up to WooCommerce 5.8.0
 * Fix: Ignoring user role restrictions when the product is getting added to cart from frontend via AJAX

@@ -3,7 +3,7 @@
  * Plugin Name: KCMS Coupons
  * Plugin URI: https://github.com/KubeeCMS/kcms-coupons/
  * Description: <strong>KCMS Smart Coupons</strong> lets customers buy gift certificates, store credits or coupons easily. They can use purchased credits themselves or gift to someone else.
- * Version: 4.30.0
+ * Version: 4.31.0
  * Author: StoreApps
  * Author URI: https://github.com/KubeeCMS/kcms-coupons/
  * Developer: StoreApps
@@ -63,3 +63,4 @@ if ( is_woocommerce_active() ) {
 	$GLOBALS['woocommerce_smart_coupon'] = WC_Smart_Coupons::get_instance();
 
 } // End woocommerce active check
+

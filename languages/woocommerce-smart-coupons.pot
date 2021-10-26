@@ -2,13 +2,13 @@
 # This file is distributed under the same license as the WooCommerce Smart Coupons package.
 msgid ""
 msgstr ""
-"Project-Id-Version: WooCommerce Smart Coupons 4.30.0\n"
+"Project-Id-Version: WooCommerce Smart Coupons 4.31.0\n"
 "Report-Msgid-Bugs-To: https://www.storeapps.org/support/contact-us/\n"
-"POT-Creation-Date: 2021-10-14 21:00:19+00:00\n"
+"POT-Creation-Date: 2021-10-22 06:26:02+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: Fri, 15 Oct 2021 02:30:19 +0530\n"
+"PO-Revision-Date: Fri, 22 Oct 2021 11:56:02 +0530\n"
 "Last-Translator: Ratnakar Dubey <support@storeapps.org>\n"
 "Language-Team: StoreApps <support@storeapps.org>\n"
 
@@ -98,7 +98,7 @@ msgstr ""
 msgid "it to use"
 msgstr ""
 
-#. #-#-#-#-#  woocommerce-smart-coupons.pot (WooCommerce Smart Coupons 4.30.0)  #-#-#-#-#
+#. #-#-#-#-#  woocommerce-smart-coupons.pot (WooCommerce Smart Coupons 4.31.0)  #-#-#-#-#
 #. Plugin Name of the plugin/theme
 #: includes/class-wc-sc-admin-notifications.php:177
 #: includes/class-wc-sc-admin-notifications.php:243
@@ -1150,12 +1150,12 @@ msgstr ""
 msgid "upto %s"
 msgstr ""
 
-#: includes/class-wc-sc-auto-apply-coupon.php:121
-#: includes/class-wc-sc-auto-apply-coupon.php:189
+#: includes/class-wc-sc-auto-apply-coupon.php:123
+#: includes/class-wc-sc-auto-apply-coupon.php:191
 msgid "Auto apply?"
 msgstr ""
 
-#: includes/class-wc-sc-auto-apply-coupon.php:122
+#: includes/class-wc-sc-auto-apply-coupon.php:124
 msgid ""
 "When checked, this coupon will be applied automatically, if it is valid. If "
 "enabled in more than 5 coupons, only 5 coupons will be applied "
